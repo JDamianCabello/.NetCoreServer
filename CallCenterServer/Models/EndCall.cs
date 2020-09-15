@@ -2,6 +2,9 @@
 
 namespace SharedNameSpace
 {
+    /// <summary>
+    /// Model to end call
+    /// </summary>
     [Serializable]
     class EndCall
     {

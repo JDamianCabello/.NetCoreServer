@@ -1,12 +1,13 @@
 ﻿using System;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SharedNameSpace
 {
-    [Serializable]
+    [Serializable, Table("Users")]
     public class User : INotifyPropertyChanged
     {
-        [field: NonSerializedAttribute()]
+        [field: NonSerialized()]
         public event PropertyChangedEventHandler PropertyChanged;
 
         private void OnPropertyChanged(string property)
@@ -20,9 +21,13 @@ namespace SharedNameSpace
         private bool inCall;
         private bool online;
 
+        [Column]
         public string Id { get => id; set => id = value; }
+        [Column]
         public string Name { get => name; set => name = value; }
+        [Column]
         public bool IsAdmin { get => isAdmin; set => isAdmin = value; }
+        [NotMapped] //The NotMapped attribute is used to specify that an entity or property is not to be mapped to a table or column in the database.
         public bool InCall
         {
             get => inCall;
@@ -36,8 +41,10 @@ namespace SharedNameSpace
                 }
             }
         }
-
+        [NotMapped] //The NotMapped attribute is used to specify that an entity or property is not to be mapped to a table or column in the database.
         public bool Online { get => online; set => online = value; }
+
+        public User() { }
 
         public User(string id, string name, bool isAdmin)
         {
@@ -50,7 +57,8 @@ namespace SharedNameSpace
 
         public override string ToString()
         {
-            return Name + " | " + Id;
+            string aux = IsAdmin ? " Admin user" : " Normal user";
+            return Name + " | " + Id + " | " +  aux;
         }
 
         public override bool Equals(object obj)
@@ -62,19 +70,27 @@ namespace SharedNameSpace
             return false;
         }
 
-        public static bool operator ==(object o, User u)
+        public static bool operator == (object o, User u)
         {
             return u.Equals(o);
         }
 
-        public static bool operator !=(object o, User u)
+        public static bool operator != (object o, User u)
         {
             return !u.Equals(o);
         }
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            unchecked
+            {
+                int hash = 23; //Some prime number to start hash
+                int hashSecondPrime = 41; //Other prime to multiply
+                hash = hash * hashSecondPrime + Id.GetHashCode();
+                hash = hash * hashSecondPrime + Name.GetHashCode();
+
+                return hash;
+            }
         }
     }
 }
