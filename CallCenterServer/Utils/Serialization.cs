@@ -60,7 +60,7 @@ namespace Serialization
     {
         public override Type BindToType(string assemblyName, string typeName)
         {
-            return Type.GetType(String.Format("{0}, {1}", typeName, Assembly.GetExecutingAssembly().FullName));
+            return Type.GetType(string.Format("{0}, {1}", typeName, Assembly.GetExecutingAssembly().FullName));
         }
     }
 

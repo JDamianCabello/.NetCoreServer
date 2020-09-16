@@ -161,7 +161,7 @@ namespace CallCenterServer
                 if (received is User u)
                 {
                     User loggedUser;
-                    if (DEBBUG_MODE) //Don`t match users to database in debbug mode, only for thest porpuses
+                    if (DEBBUG_MODE) //Don`t match users to database in debbug mode, only for test porpuses
                     {
                         loggedUser = u;
                     }
@@ -252,10 +252,7 @@ namespace CallCenterServer
             if (adminsOnline.IsEmpty) //No admin to send data
                 return;
             foreach (KeyValuePair<User, Socket> client in adminsOnline)
-            {
-                if (client.Key.IsAdmin && u != client.Key)
-                    Send(client.Value, u);
-            }
+                Send(client.Value, u);
         }
 
         /// <summary>
