@@ -1,41 +1,40 @@
-
 # Welcome to .NetCoreServer!
 
-.NetCoreServer is a **dotnet** server solution to use where you want. Server have config.json file to specific some parameters and 2 clients to use the server a [normal dummy client](#) and a [admin client](#).
+.NetCoreServer is a **dotnet** server solution to use where you want. Server have config.json file to specific some parameters and 2 clients to use the server as [normal dummy client](#) and as [admin client](#).
 
 How to start: 
 
 
 # Config file ([config.json](#))
 
-The server need a minimum of config to start run. All config are in this file and server will do all about this.
+The server need a minimum of configurations to start. All configurations are includes this file.
 
-The following lines show the config file options:
-
-    {
-      "SERVER_IP": "YOUR SERVER IP HERE DEFAULT IS Localhost",
-      "SERVER_PORT": "YOUR SERVER PORT HERE DEFAULT IS 4044",
-      "DEBBUG_MODE": "SHOW OR HIDE THE SERVER MENU {TRUE : FALSE}"
-      "PATH_LOG_FOLDER": "PATCH TO YOUR LOGS FILES DIRECTORY ( DEFAULT IS SERVER FOLDER/Serverlogs)"
-    }
-
-In the options if want default just set the value to empty valor.
+The following lines shows the configurations file options:
 
     {
-          "SERVER_IP": "",
-          "SERVER_PORT": "",
-          "DEBBUG_MODE": "true"
-          "PATH_LOG_FOLDER": ""
+      "SERVER_IP": "YOUR SERVER IP HERE. DEFAULT localhost",
+      "SERVER_PORT": "YOUR SERVER PORT HERE. DEFAULT 4044",
+      "DEBBUG_MODE": "SHOW OR HIDE THE SERVER MENU {true: false}"
+      "PATH_LOG_FOLDER": "PATH TO YOUR LOGS FILES DIRECTORY ( DEFAULT SERVER folder/serverlogs)"
     }
-This are the minimum config to server (To work in localhost).
 
-if some option are bad, server will thrown a exception.
+In the configurations if want default just set the value to empty valor.
+
+    {
+      "SERVER_IP": "",
+      "SERVER_PORT": "",
+      "DEBBUG_MODE": "true"
+      "PATH_LOG_FOLDER": ""
+    }
+This is the minimum configuration to server (To work in localhost).
+
+If some options are wrong, server will thrown a exception.
 
 ## Server models
 
-The Server.cs class need some models to work all modes are stored in Models folder. If want some extra function or include a new model just put here and call in in the ListenClient(object o) method from Server.cs (line 203).
+The Server.cs class need some models to work. All models are stored in Models folder. If want some extra function or include a new model just put here and call in in the ListenClient(object o) method from Server.cs (line 203).
 
-Example if u wanna receive a option class make your model and in the second do while include it like this: 
+Example if you want to receive a option class make your model and at the second do while include it like this: 
 
 
         private void ListenClient(object o)
@@ -61,7 +60,7 @@ Example if u wanna receive a option class make your model and in the second do w
         } while (true);
         socket.Close();
      }
-**All models that u makes need be in the same namespace and include the flag [Serializable]** Example below.
+**All models you makes must be in the same namespace and include the flag [Serializable]** Example below.
 
     using System;
     
@@ -85,6 +84,29 @@ Example if u wanna receive a option class make your model and in the second do w
     }
 
 ## Database
+To build the database can make a new SQLite database with this structure: 
+
+    -- TABLE
+    CREATE TABLE "Users" (
+        "Id" TEXT NOT NULL CONSTRAINT "PK_Users" PRIMARY KEY,
+        "Name" TEXT NOT NULL,
+        "IsAdmin" INTEGER NOT NULL
+    );
+    CREATE TABLE "__EFMigrationsHistory" (
+        "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+        "ProductVersion" TEXT NOT NULL
+    );
+
+Or use the Migration class. In Visual Studio open the console and run the following command: 
+> update-Database
+
+For delete the migration use: 
+> remove-migration
+
+To update the migration go to /Migrations/20200911090205_InitialCreate.cs and write your tables in the Up method.
+
+We have a SqLiteOperator in the server (Server/Database/SqLiteOperator.cs) to manage SQLite databases. U can do all u want with databases here, I just include a Users CRUD. If need more info about program new functionalitys check [this link](https://www.learnentityframeworkcore.com/).
+
 When server aren't in debug mode will check if user exist in the database.
 
 To manage database put server in debug mode (Remember config file) and use the Manage database option in menu.
@@ -111,3 +133,19 @@ Translation:
 5. Delete user
 
 The list is in MariaDB style.
+
+    +-------------------------------------------+
+    |      | ID        | NAME        | IS ADMIN |
+    +-------------------------------------------+
+    | 001  | ADMIN     | ADMIN       | True     |
+    +-------------------------------------------+
+    | 002  | admin     | admin       | True     |
+    +-------------------------------------------+
+    | 003  | asd       | asd         | False    |
+    +-------------------------------------------+
+    | 004  | noadmin   | noadmin    | False     |
+    +-------------------------------------------+
+    | 005  | test      | test       | True      |
+    +-------------------------------------------+
+
+
