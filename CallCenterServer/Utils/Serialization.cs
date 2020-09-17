@@ -38,7 +38,7 @@ namespace Serialization
             MemoryStream memory = new MemoryStream(data);
             BinaryFormatter formatter = new BinaryFormatter
             {
-                Binder = new CurrentAssemblyDeserializationBinder() //Chante the current assambly to SharedNameSpace (All models have this namespace)
+                Binder = new CurrentAssemblyDeserializationBinder() //Change the current assambly to SharedNameSpace (All models have this namespace)
             };
 
             try

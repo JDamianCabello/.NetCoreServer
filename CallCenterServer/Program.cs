@@ -11,7 +11,7 @@ namespace CallCenterServer
     {
         //startup configuration
         static readonly IConfiguration config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json").Build();
-        private static readonly bool DEBBUG_MODE = config["DEBBUG_MODE"].ToLower() == "true";
+        private static readonly bool DEBBUG_MODE = config["DEBUG_MODE"].ToLower() == "true";
 
         static readonly bool serverStopped = false;
         static bool exception = false;
@@ -440,6 +440,7 @@ namespace CallCenterServer
             {
                 case 1: //El cliente no está disponible al enviarle algo
                     auxError += "El cliente está desconectado no se pudo enviar nada.";
+                    exception = false; //Dont should stop the program
                     break;
                 case 2: //El socket esta desechado
                     auxError += "El socket al que se intentó enviar algo está eliminado (.Dispose()).";

@@ -13,6 +13,6 @@ namespace CallCenterServer
         /// </summary>
         public DbSet<User> Users { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite("Data Source=CallCenterUsers.db");
+            => options.UseSqlite("Data Source=CallCenterUsers.db"); //Database name here
     }
 }

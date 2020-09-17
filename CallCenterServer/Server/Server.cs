@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Microsoft.Extensions.Configuration;
 using SharedNameSpace;
+using System.Linq;
 
 namespace CallCenterServer
 {
@@ -21,16 +22,13 @@ namespace CallCenterServer
         private readonly string SERVER_IP = string.IsNullOrWhiteSpace(config["SERVER_IP"]) ? "127.0.0.1" : config["SERVER_IP"];
         private readonly string SERVER_PORT = string.IsNullOrWhiteSpace(config["SERVER_PORT"]) ? "4404" : config["SERVER_PORT"];
 
-        private static readonly bool DEBBUG_MODE = config["DEBBUG_MODE"].ToLower() == "true";
+        private static readonly bool DEBUG_MODE = config["DEBUG_MODE"].ToLower() == "true";
 
-        //Not implemented 
-        //private readonly bool ONLY_ADMIT_ADMIN = config["ONLY_ADMIT_ADMIN"].ToLower() == "true";
-        //private readonly string MESSAGE_TO_CLIENTS_IN_ONLY_ADMINS_MODE = config["MESSAGE_TO_CLIENTS_IN_ONLY_ADMINS_MODE"];
 
-        static Socket socket;
-        static Thread listenThread;
-        static ConcurrentDictionary<User, Socket> agentsOnline; //thread-safe collection class to store key/value pairs.
-        static ConcurrentDictionary<User, Socket> adminsOnline; //thread-safe collection class to store key/value pairs.
+        Socket socket;
+        Thread listenThread;
+        ConcurrentDictionary<User, Socket> agentsOnline; //thread-safe collection class to store key/value pairs.
+        ConcurrentDictionary<User, Socket> adminsOnline; //thread-safe collection class to store key/value pairs.
         public bool IsServerRunning; //To check if server is running
 
 
@@ -100,7 +98,7 @@ namespace CallCenterServer
         /// </summary>
         public void StopServer()
         {
-            BroadCastMessageAllClients(new Message("Servidor apagandose, desconectando a todos los agentes."));
+            BroadCastMessageAllClients(new Message("Server shutdown, disconnecting all clients."));
 
             Parallel.ForEach(agentsOnline, u =>
             {
@@ -116,15 +114,8 @@ namespace CallCenterServer
         /// </summary>
         /// <returns>A users online list</returns>
         public List<User> ConnectecUsers()
-        {
-            if (agentsOnline.IsEmpty)
-                return null;
-            List<User> userAux = new List<User>();
-            foreach (KeyValuePair<User, Socket> client in agentsOnline)
-            {
-                userAux.Add(client.Key);
-            }
-            return userAux;
+        {   
+            return agentsOnline.IsEmpty ? null : agentsOnline.Keys.ToList();
         }
 
         /// <summary>
@@ -161,7 +152,7 @@ namespace CallCenterServer
                 if (received is User u)
                 {
                     User loggedUser;
-                    if (DEBBUG_MODE) //Don`t match users to database in debbug mode, only for test porpuses
+                    if (DEBUG_MODE) //Don`t match users to database in debbug mode, only for test porpuses
                     {
                         loggedUser = u;
                     }
@@ -169,13 +160,7 @@ namespace CallCenterServer
                     {
                         if (!sqLite.ValidateLogin(u)) //If user arent in database will get out of the thread poll. In debugg mode will accept all
                         {
-                            ServerLog.GetInstance().WriteToConnections(u);
                             Send(socket, new ErrorStatus(false, "Wrong id or name"));
-                            return;
-                        }
-                        else if (agentsOnline.ContainsKey(u)) //If user was loggin, show contact admin
-                        {
-                            Send(socket, new ErrorStatus(false, "These user are online, contact with the admin"));
                             return;
                         }
                         loggedUser = sqLite.FindUser(u.Id);
@@ -296,7 +281,7 @@ namespace CallCenterServer
         /// <summary>
         /// Send a object to all users connected
         /// </summary>
-        /// <param name="o">object to send</param>
+        /// <param name="message">object to send</param>
         public void BroadCastMessageAllClients(Message message)
         {
             foreach (KeyValuePair<User, Socket> client in agentsOnline)

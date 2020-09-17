@@ -48,7 +48,7 @@ namespace CallCenterServer
         /// Find if exist the user in the database
         /// </summary>
         /// <param name="userID">User unique id</param>
-        /// <returns>User if exist or null if don´t exist</returns>
+        /// <returns>User if exist or null if don't exist</returns>
         public User FindUser(string userID)
         {
             using var db = new SQLiteDBContext();
