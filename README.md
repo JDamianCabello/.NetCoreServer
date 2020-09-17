@@ -184,8 +184,42 @@ And in the `public static object Deserializate(byte[] data)` method when create 
 # Server.cs
 This class implements the [Singleton](https://www.c-sharpcorner.com/UploadFile/8911c4/singleton-design-pattern-in-C-Sharp/) pattern.
 
-The `Server.cs` use a external configuration, for read this settings use the interface [IConfiguration](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.configuration.iconfiguration?view=dotnet-plat-ext-3.1) and [IConfigurationBuilder](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.configuration.iconfigurationbuilder?view=dotnet-plat-ext-3.1). This 2 dependencies are includes in nuget package `Microsoft.Extensions.Configuration` . Link [here](https://www.nuget.org/packages/Microsoft.Extensions.Configuration/).
+The `Server.cs` use a external configuration, for read this settings use the interface [IConfiguration](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.configuration.iconfiguration?view=dotnet-plat-ext-3.1) and [IConfigurationBuilder](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.configuration.iconfigurationbuilder?view=dotnet-plat-ext-3.1). This two dependencies are includes in nuget package `Microsoft.Extensions.Configuration` . Link [here](https://www.nuget.org/packages/Microsoft.Extensions.Configuration/).
 
 As the configuration is in json format we need install other nuget package : `Microsoft.Extensions.Configuration.Json` for extend the class `ConfigurationBuilder` : `AddJsonFile` and `AddJsonStream`. Link [here](https://www.nuget.org/packages/Microsoft.Extensions.Configuration.Json/).
 
+The code line is this:
+
+    static readonly IConfiguration config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json").Build();
+
 From this configuration file this class use the key/value collections: SERVER_IP, SERVER_PORT and DEBUG_MODE.
+`Server.cs` have two thread-safe collections to store agents and admins called [ConcurrentDictionary](https://docs.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentdictionary-2?view=netcore-3.1) , one [socket](https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket?view=netcore-3.1) for listen all clients and one [thread](https://docs.microsoft.com/en-us/dotnet/api/system.threading.thread?view=netcore-3.1) to create new instances when client connect.
+
+When call `Server.cs` for first time this is the method execution for start listen clients:
+
+1. GetInstance()
+	1.  If server instance  is null: `server = new Server`
+	2. Return server instance
+2. StartServer(ErrorDelegate  errorDelegate)
+	1. Bind delegates to show errors
+	2. Try parse the config SERVER_IP and SERVER_PORT values
+		1. If fail thrown format exception 
+	3. Makes the socket and bind to SERVER_IP:SERVER_PORT
+	4. Start listen.
+	5. Make the SqLiteOperator instance.
+	6. Make a new thread for wait clients. (This thread do Listen method)
+	7. create the two collections to store clients
+	8. Put IsServerRunning to true
+3. Listen (From the new thread)
+	1. Create a Socket "client"
+	2. Enter in infinite loop (while server running)
+		1. Wait for a client doing socket.Accept()
+		2. When client connect to server socket makes a new thread (listenClient) and point on ListenClient method. `Thread listenClient = new Thread(ListenClient);`
+		3. Start the Thread passing the socket to method. `listenClient.Start(client);`
+	3. Check IsServerRunning to break the loop
+
+When server start and ListenClient method aren´t in debug mode, need check if user exist in database.
+
+Here have a pseudocode method  example:
+
+![ListenClient method](https://github.com/JDamianCabello/.NetCoreServer/blob/master/Info/Img/Server.Listenclient.png)
