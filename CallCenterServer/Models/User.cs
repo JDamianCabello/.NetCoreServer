@@ -61,6 +61,11 @@ namespace SharedNameSpace
             return Name + " | " + Id + " | " +  aux;
         }
 
+        /// <summary>
+        /// Return if user is equal to other user
+        /// </summary>
+        /// <param name="obj">Object to compare</param>
+        /// <returns></returns>
         public override bool Equals(object obj)
         {
             if (!(obj is User))
@@ -70,16 +75,32 @@ namespace SharedNameSpace
             return false;
         }
 
+        /// <summary>
+        /// Returns if user is equals to object
+        /// </summary>
+        /// <param name="o">An object</param>
+        /// <param name="u">User to compare</param>
+        /// <returns></returns>
         public static bool operator == (object o, User u)
         {
             return u.Equals(o);
         }
 
+        /// <summary>
+        /// Returns if user isn't equals to object
+        /// </summary>
+        /// <param name="o">An object</param>
+        /// <param name="u">User to compare</param>
+        /// <returns></returns>
         public static bool operator != (object o, User u)
         {
             return !u.Equals(o);
         }
 
+        /// <summary>
+        /// Set user hash code
+        /// </summary>
+        /// <returns>The unique user hash code</returns>
         public override int GetHashCode()
         {
             unchecked

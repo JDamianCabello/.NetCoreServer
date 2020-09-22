@@ -19,6 +19,7 @@ namespace CallCenterServer
 
         static readonly IConfiguration config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json").Build();
         private readonly int BUFFERSIZE = 1024; //Max buffer size. In big list (>= 50 users) will do out of size exception
+        private readonly int MAXCLIENTSCONNECTED = 200;
         private readonly string SERVER_IP = string.IsNullOrWhiteSpace(config["SERVER_IP"]) ? "127.0.0.1" : config["SERVER_IP"];
         private readonly string SERVER_PORT = string.IsNullOrWhiteSpace(config["SERVER_PORT"]) ? "4404" : config["SERVER_PORT"];
 
@@ -70,13 +71,17 @@ namespace CallCenterServer
                 IPEndPoint endPoint = new IPEndPoint(addr, parsedServerPort);
                 socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 socket.Bind(endPoint);
-                socket.Listen(1000);
+                socket.Listen(MAXCLIENTSCONNECTED);
             }
             catch (FormatException e)
             {
                 onErrorDelegate(100);
                 ServerLog.GetInstance().WriteToExceptions(e);
                 return;
+            }
+            catch(SocketException e)
+            {
+                ServerLog.GetInstance().WriteToExceptions(e);
             }
             sqLite = new SqLiteOperator();
 
@@ -155,29 +160,27 @@ namespace CallCenterServer
                     if (DEBUG_MODE) //Don`t match users to database in debbug mode, only for test porpuses
                     {
                         loggedUser = u;
+                        loggedUser.IsAdmin = true; //In debug mode all users are admins only for test
                     }
                     else
                     {
                         if (!sqLite.ValidateLogin(u)) //If user arent in database will get out of the thread poll. In debugg mode will accept all
                         {
-                            Send(socket, new ErrorStatus(false, "Wrong id or name"));
+                            Send(socket, new LoginStatus(false, "Wrong id or name"));
+                            ServerLog.GetInstance().WriteToConnections(u, socket.RemoteEndPoint.ToString(), ConnectionAction.Wrong_Login);
                             return;
                         }
                         loggedUser = sqLite.FindUser(u.Id);
                     }
-
-                    Send(socket, new ErrorStatus(true, "Succes"));
+                    Send(socket, new LoginStatus(true, "Succes",loggedUser.IsAdmin));
                     Thread.CurrentThread.Name = u.Name; //Change the thread name for be more friendly to debug/test
                     agentsOnline.TryAdd(loggedUser, socket);
-                    ServerLog.GetInstance().WriteToConnections(loggedUser);
+                    ServerLog.GetInstance().WriteToConnections(loggedUser, socket.RemoteEndPoint.ToString(),ConnectionAction.Login);
 
                     if (loggedUser.IsAdmin)
-                    {
                         adminsOnline.TryAdd(loggedUser, socket);
-                        SendUserList(loggedUser);
-                    }
-                    else
-                        SendUserUpdateToAdmin(loggedUser);
+
+                    SendUserUpdateToAdmin(loggedUser);
 
                 }
             } while (!(received is User)); //If client dont send user, can't connect to server
@@ -206,10 +209,18 @@ namespace CallCenterServer
                     continue;
                 }
 
-                if (received is ClienLogout clienLogout)
+                if(received is AdminOrder aOrder)
                 {
-                    ClientLogout(clienLogout);
-                    continue;
+                    switch (aOrder.OrderType)
+                    {
+                        case OrderType.GetUserList:
+                            SendUserList(aOrder.UserToSendResponse);
+                            break;
+                        case OrderType.SendMessage:
+                            break;
+                        case OrderType.DisconnectUser:
+                            break;
+                    }
                 }
 
                 if (received is Message message)
@@ -263,19 +274,12 @@ namespace CallCenterServer
         {
             if (adminsOnline.IsEmpty) //No admin to send data
                 return;
-            if (agentsOnline.Count == 1) //only admin user was online (one user)
-                return;
+            User[] users = new User[agentsOnline.Count];
+            int counter = 0;
+            foreach (var item in agentsOnline)
+                users[counter++] = item.Key;
 
-            User[] userAux = new User[agentsOnline.Count - 1]; //Send all user less the admin that receive the list
-            int count = 0;
-            foreach (KeyValuePair<User, Socket> client in agentsOnline)
-            {
-                if (u == client.Key)
-                    continue;
-                userAux[count++] = client.Key;
-            }
-
-            Send(agentsOnline[u], userAux);
+            Send(agentsOnline[u], users);
         }
 
         /// <summary>
@@ -285,9 +289,7 @@ namespace CallCenterServer
         public void BroadCastMessageAllClients(Message message)
         {
             foreach (KeyValuePair<User, Socket> client in agentsOnline)
-            {
                 Send(client.Value, message);
-            }
         }
 
         /// <summary>
@@ -296,16 +298,7 @@ namespace CallCenterServer
         /// <param name="m">Message to send</param>
         private void SendMessageToClient(Message m)
         {
-            try
-            {
                 Send(agentsOnline[m.userToMessage], m);
-            }
-            catch (KeyNotFoundException e)
-            {
-                ServerLog.GetInstance().WriteToExceptions(e);
-                onErrorDelegate(200);
-            }
-            
         }
 
         /// <summary>
@@ -314,7 +307,6 @@ namespace CallCenterServer
         /// <param name="call">The incomming call</param>
         public void SendCall(Call call)
         {
-            //User userAux = FindUser(call.to);
             Send(agentsOnline[call.to], call);
             call.to.InCall = true;
             SendUserUpdateToAdmin(call.to);
@@ -337,20 +329,9 @@ namespace CallCenterServer
         /// <param name="logout"></param>
         public void Logout(Logout logout)
         {
+            Send(agentsOnline[logout.userToLogout], logout);
             agentsOnline.TryRemove(logout.userToLogout, out _);
             SendLogoutToAdmin(logout.userToLogout);
-        }
-
-        /// <summary>
-        /// Method that receive a admin order to logout some client
-        /// </summary>
-        /// <param name="clienLogout">Client who admin send a logout signal</param>
-        public void ClientLogout(ClienLogout clienLogout)
-        {
-            Send(agentsOnline[clienLogout.clientToLogout], new Logout(clienLogout.clientToLogout));
-            agentsOnline[clienLogout.clientToLogout].Close();
-            agentsOnline.TryRemove(clienLogout.clientToLogout, out _);
-            SendLogoutToAdmin(clienLogout.clientToLogout);
         }
 
         /// <summary>
@@ -371,7 +352,11 @@ namespace CallCenterServer
             {
                 ServerLog.GetInstance().WriteToExceptions(e);
                 onErrorDelegate(2);
-            }            
+            }
+            catch (SocketException e)
+            {
+                ServerLog.GetInstance().WriteToExceptions(e);
+            }
         }
 
         /// <summary>
@@ -393,16 +378,14 @@ namespace CallCenterServer
                     {
                         if (item.Key.IsAdmin)//If user is admin delete from admin list
                             adminsOnline.TryRemove(item.Key, out _);
+                        ServerLog.GetInstance().WriteToConnections(item.Key, item.Value.RemoteEndPoint.ToString(), ConnectionAction.Disconnect);
                         agentsOnline.TryRemove(item.Key, out _);
                         SendLogoutToAdmin(item.Key);
                         break;
-
                     }
                 return null;
             }
             return BinarySerialization.Deserializate(buffer);
         }
-
-
     }
 }

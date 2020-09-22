@@ -2,9 +2,11 @@
 using SharedNameSpace;
 using System;
 using System.IO;
+using System.Net.Sockets;
 
 namespace CallCenterServer
 {
+    public enum ConnectionAction { Login, Wrong_Login, Disconnect};
     class ServerLog
     {
         //Singleton pattern
@@ -38,12 +40,12 @@ namespace CallCenterServer
         /// Write all uses connections to Connection log file
         /// </summary>
         /// <param name="u">Current logged user</param>
-        public void WriteToConnections(User u)
+        public void WriteToConnections(User u, string userIp, ConnectionAction action)
         {
             CheckIfExistConnectionsLogsFolder();
             lock (syncWriteConnectionLock)
             {
-                File.AppendAllText(PATH_CONNECTIONLOG_FOLDER + Path.DirectorySeparatorChar + "ConnectionsLog_" + DateTime.Now.ToString("yyyyMMdd") + ".log", FormatConnection(u));
+                File.AppendAllText(PATH_CONNECTIONLOG_FOLDER + Path.DirectorySeparatorChar + "ConnectionsLog_" + DateTime.Now.ToString("yyyyMMdd") + ".log", FormatConnection(u, userIp, action));
             }
         }
 
@@ -109,8 +111,9 @@ namespace CallCenterServer
         {
             string aux = string.Empty;
             const string newLine = "\n";
+            const string separator = newLine + "=======================================================================================================" + newLine;
 
-            aux += newLine + DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss'-'FFFF") + newLine;
+            aux += DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss'-'FFFF") + newLine;
 
             aux += "TYPE: :";
             aux += exception.GetType() + newLine;
@@ -133,7 +136,7 @@ namespace CallCenterServer
             aux += "ADDITIONAL DATA: ";
             aux += exception.Data + newLine;
 
-            aux += "=======================================================================================================";
+            aux += separator;
 
             return aux;
         }
@@ -148,10 +151,32 @@ namespace CallCenterServer
         /// </summary>
         /// <param name="user">User into for make a string to log file</param>
         /// <returns>Formated string with user info</returns>
-        private string FormatConnection(User user)
+        private string FormatConnection(User user, string userIp, ConnectionAction action)
         {
             const string newLine = "\n";
-            return newLine + DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss'-'FFFF") + "\t" + user.ToString() + " | " + newLine;
+            const string separator = newLine + "=======================================================================================================" + newLine;
+            string formatedString = string.Empty;
+
+            formatedString += userIp + " | " + DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss'-'FFFF") + newLine;
+
+            switch (action)
+            {
+                case ConnectionAction.Login:
+                    formatedString += "[Login]: ";
+                    break;
+                case ConnectionAction.Wrong_Login:
+                    formatedString += "[Wrong login]: ";
+                    break;
+                case ConnectionAction.Disconnect:
+                    formatedString += "[Disconnection]: ";
+                    break;
+            }
+            
+            formatedString += user.ToString();
+            formatedString += separator;
+
+
+            return formatedString;
         }
     }
 }

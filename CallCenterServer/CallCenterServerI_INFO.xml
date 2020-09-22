@@ -146,12 +146,6 @@
             </summary>
             <param name="logout"></param>
         </member>
-        <member name="M:CallCenterServer.Server.ClientLogout(SharedNameSpace.ClienLogout)">
-            <summary>
-            Method that receive a admin order to logout some client
-            </summary>
-            <param name="clienLogout">Client who admin send a logout signal</param>
-        </member>
         <member name="M:CallCenterServer.Server.Send(System.Net.Sockets.Socket,System.Object)">
             <summary>
             Send a object to the client
@@ -166,7 +160,7 @@
             <param name="s">Socket that receive the object</param>
             <returns>Object received from client</returns>
         </member>
-        <member name="M:CallCenterServer.ServerLog.WriteToConnections(SharedNameSpace.User)">
+        <member name="M:CallCenterServer.ServerLog.WriteToConnections(SharedNameSpace.User,System.String,CallCenterServer.ConnectionAction)">
             <summary>
             Write all uses connections to Connection log file
             </summary>
@@ -214,7 +208,7 @@
              <param name="exception">The exception info</param>
              <returns>Formated string</returns>
         </member>
-        <member name="M:CallCenterServer.ServerLog.FormatConnection(SharedNameSpace.User)">
+        <member name="M:CallCenterServer.ServerLog.FormatConnection(SharedNameSpace.User,System.String,CallCenterServer.ConnectionAction)">
             <summary>
             Format the user info for write into log file
             
@@ -243,6 +237,35 @@
             <summary>
             Model to end call
             </summary>
+        </member>
+        <member name="M:SharedNameSpace.User.Equals(System.Object)">
+            <summary>
+            Return if user is equal to other user
+            </summary>
+            <param name="obj">Object to compare</param>
+            <returns></returns>
+        </member>
+        <member name="M:SharedNameSpace.User.op_Equality(System.Object,SharedNameSpace.User)">
+            <summary>
+            Returns if user is equals to object
+            </summary>
+            <param name="o">An object</param>
+            <param name="u">User to compare</param>
+            <returns></returns>
+        </member>
+        <member name="M:SharedNameSpace.User.op_Inequality(System.Object,SharedNameSpace.User)">
+            <summary>
+            Returns if user isn't equals to object
+            </summary>
+            <param name="o">An object</param>
+            <param name="u">User to compare</param>
+            <returns></returns>
+        </member>
+        <member name="M:SharedNameSpace.User.GetHashCode">
+            <summary>
+            Set user hash code
+            </summary>
+            <returns>The unique user hash code</returns>
         </member>
         <member name="T:Serialization.BinarySerialization">
             <summary>

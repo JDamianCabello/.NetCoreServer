@@ -203,8 +203,8 @@ namespace CallCenterServer
 
             Console.Write("\n\nCliente: ");
             int selectedUser = int.Parse(Console.ReadLine()) - 1; //-1 To get the real array position
-            ClienLogout logout = new ClienLogout(usersList[selectedUser]);
-            Server.GetInstance().ClientLogout(logout);
+            Logout logout = new Logout(usersList[selectedUser]);
+            Server.GetInstance().Logout(logout);
             Console.WriteLine("Desconectando el cliente : {0}", usersList[selectedUser].ToString());
             Console.WriteLine("Cliente desconectado");
             Console.ReadKey();
