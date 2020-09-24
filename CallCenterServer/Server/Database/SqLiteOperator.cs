@@ -34,8 +34,9 @@ namespace CallCenterServer
                 return;
 
             //Update user
-            user.Id = u.Id;
+            user.IsAdmin = u.IsAdmin;
             user.Name = u.Name;
+            user.Id = user.Id;
 
             //Save changes
             db.SaveChangesAsync();
