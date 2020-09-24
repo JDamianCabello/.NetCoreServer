@@ -20,6 +20,10 @@ namespace CallCenterServer
             db.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Update a exist user
+        /// </summary>
+        /// <param name="u"></param>
         public void UpdateUser(User u)
         {
             using var db = new SQLiteDBContext();

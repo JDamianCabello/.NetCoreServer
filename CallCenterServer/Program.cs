@@ -203,7 +203,7 @@ namespace CallCenterServer
 
             Console.Write("\n\nCliente: ");
             int selectedUser = int.Parse(Console.ReadLine()) - 1; //-1 To get the real array position
-            Logout logout = new Logout(usersList[selectedUser]);
+            AdminOrder logout = new AdminOrder(OrderType.DisconnectUser, usersList[selectedUser]);
             Server.GetInstance().Logout(logout);
             Console.WriteLine("Desconectando el cliente : {0}", usersList[selectedUser].ToString());
             Console.WriteLine("Cliente desconectado");
@@ -274,7 +274,7 @@ namespace CallCenterServer
             Console.WriteLine();
             Console.WriteLine("Escriba el mensaje: ");
             string msg = Console.ReadLine();
-            Server.GetInstance().BroadCastMessageAllClients(new Message(msg));
+            Server.GetInstance().BroadCastMessageAllClients(new ServerResponse(ResponseContext.ServerMessage, msg));
             Console.WriteLine("Mensaje enviado, pulsa una tecla para volver al menu");
             Console.ReadKey();
         }

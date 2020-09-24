@@ -44,6 +44,12 @@
             </summary>
             <param name="u">The new user</param>
         </member>
+        <member name="M:CallCenterServer.SqLiteOperator.UpdateUser(SharedNameSpace.User)">
+            <summary>
+            Update a exist user
+            </summary>
+            <param name="u"></param>
+        </member>
         <member name="M:CallCenterServer.SqLiteOperator.FindUser(System.String)">
             <summary>
             Find if exist the user in the database
@@ -116,13 +122,13 @@
             </summary>
             <param name="u">Admin user logged</param>
         </member>
-        <member name="M:CallCenterServer.Server.BroadCastMessageAllClients(SharedNameSpace.Message)">
+        <member name="M:CallCenterServer.Server.BroadCastMessageAllClients(SharedNameSpace.ServerResponse)">
             <summary>
             Send a object to all users connected
             </summary>
             <param name="message">object to send</param>
         </member>
-        <member name="M:CallCenterServer.Server.SendMessageToClient(SharedNameSpace.Message)">
+        <member name="M:CallCenterServer.Server.SendMessageToClient(SharedNameSpace.AdminOrder)">
             <summary>
             Send a message to the destinatary
             </summary>
@@ -140,11 +146,11 @@
             </summary>
             <param name="endCall">Te endcall with the user to send it</param>
         </member>
-        <member name="M:CallCenterServer.Server.Logout(SharedNameSpace.Logout)">
+        <member name="M:CallCenterServer.Server.Logout(SharedNameSpace.AdminOrder)">
             <summary>
             Get client Logout signal and dispose the resources
             </summary>
-            <param name="logout"></param>
+            <param name="aOrder">AdminOrder</param>
         </member>
         <member name="M:CallCenterServer.Server.Send(System.Net.Sockets.Socket,System.Object)">
             <summary>

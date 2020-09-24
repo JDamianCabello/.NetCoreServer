@@ -79,7 +79,7 @@ namespace CallCenterServer
                 ServerLog.GetInstance().WriteToExceptions(e);
                 return;
             }
-            catch(SocketException e)
+            catch (SocketException e)
             {
                 ServerLog.GetInstance().WriteToExceptions(e);
             }
@@ -103,11 +103,11 @@ namespace CallCenterServer
         /// </summary>
         public void StopServer()
         {
-            BroadCastMessageAllClients(new Message("Server shutdown, disconnecting all clients."));
+            BroadCastMessageAllClients(new ServerResponse(ResponseContext.ServerMessage, "Server shutdown, disconnecting all clients."));
 
             Parallel.ForEach(agentsOnline, u =>
             {
-                Logout(new Logout(u.Key));
+                Logout(new AdminOrder(OrderType.DisconnectUser, u.Key));
                 u.Value.Close();
             });
             socket.Close();
@@ -119,7 +119,7 @@ namespace CallCenterServer
         /// </summary>
         /// <returns>A users online list</returns>
         public List<User> ConnectecUsers()
-        {   
+        {
             return agentsOnline.IsEmpty ? null : agentsOnline.Keys.ToList();
         }
 
@@ -166,16 +166,16 @@ namespace CallCenterServer
                     {
                         if (!sqLite.ValidateLogin(u)) //If user arent in database will get out of the thread poll. In debugg mode will accept all
                         {
-                            Send(socket, new LoginStatus(false, "Wrong id or name"));
+                            Send(socket, new ServerResponse(ResponseContext.Login, null));
                             ServerLog.GetInstance().WriteToConnections(u, socket.RemoteEndPoint.ToString(), ConnectionAction.Wrong_Login);
                             return;
                         }
                         loggedUser = sqLite.FindUser(u.Id);
                     }
-                    Send(socket, new LoginStatus(true, "Succes",loggedUser.IsAdmin));
+                    Send(socket, new ServerResponse(ResponseContext.Login, loggedUser));
                     Thread.CurrentThread.Name = u.Name; //Change the thread name for be more friendly to debug/test
                     agentsOnline.TryAdd(loggedUser, socket);
-                    ServerLog.GetInstance().WriteToConnections(loggedUser, socket.RemoteEndPoint.ToString(),ConnectionAction.Login);
+                    ServerLog.GetInstance().WriteToConnections(loggedUser, socket.RemoteEndPoint.ToString(), ConnectionAction.Login);
 
                     if (loggedUser.IsAdmin)
                         adminsOnline.TryAdd(loggedUser, socket);
@@ -191,11 +191,6 @@ namespace CallCenterServer
                 if (received is null) //Socket close
                     break;
 
-                if (received is Logout logout)//Client logout
-                {
-                    Logout(logout);
-                    break;
-                }
 
                 if (received is Call call)
                 {
@@ -209,28 +204,50 @@ namespace CallCenterServer
                     continue;
                 }
 
-                if(received is AdminOrder aOrder)
+                if (received is AdminOrder aOrder)
                 {
                     switch (aOrder.OrderType)
                     {
                         case OrderType.GetUserList:
-                            SendUserList(aOrder.UserToSendResponse);
+                            SendUserList(aOrder.UserToDoAction);
                             break;
                         case OrderType.SendMessage:
+                            if (aOrder.UserToDoAction is null)
+                                BroadCastMessageAllClients(new ServerResponse(ResponseContext.ServerMessage, aOrder.Message));
+                            else
+                                SendMessageToClient(aOrder);
                             break;
                         case OrderType.DisconnectUser:
+                            Logout(aOrder);
+                            break;
+                        case OrderType.ManageDatabase:
+                            ServerResponse serverResponse = new ServerResponse(ResponseContext.DatabaseManager, null);
+                            switch (aOrder.DatabaseAction)
+                            {
+                                case DatabaseAction.Create:
+                                    sqLite.CreateNewUser(aOrder.UserToDoAction);
+                                    serverResponse.ResponseObject = new DatabaseManagerResponse(true, sqLite.GetAllUsers().ToArray());
+                                    break;
+                                case DatabaseAction.Read:
+                                    serverResponse.ResponseObject = sqLite.GetAllUsers().ToArray();
+                                    break;
+                                case DatabaseAction.Update:
+                                    sqLite.UpdateUser(aOrder.UserToDoAction);
+                                    serverResponse.ResponseObject = new DatabaseManagerResponse(true, sqLite.GetAllUsers().ToArray());
+                                    break;
+                                case DatabaseAction.Delete:
+                                    sqLite.DeleteUser(aOrder.UserToDoAction);
+                                    serverResponse.ResponseObject = new DatabaseManagerResponse(true, sqLite.GetAllUsers().ToArray());
+                                    break;
+                            }
+                            if (!(serverResponse.ResponseObject is null))
+                                if (aOrder.UserToSendResponse is null)
+                                    aOrder.UserToSendResponse = aOrder.UserToDoAction;
+                                Send(agentsOnline[aOrder.UserToSendResponse], serverResponse);
                             break;
                     }
                 }
 
-                if (received is Message message)
-                {
-                    if (message.userToMessage is null)
-                        BroadCastMessageAllClients(message);
-                    else
-                        SendMessageToClient(message);
-                    continue;
-                }
             } while (true);
 
             //Close the resources and end the current thread.
@@ -248,7 +265,7 @@ namespace CallCenterServer
             if (adminsOnline.IsEmpty) //No admin to send data
                 return;
             foreach (KeyValuePair<User, Socket> client in adminsOnline)
-                Send(client.Value, u);
+                Send(client.Value, new ServerResponse(ResponseContext.ClientsManager, u));
         }
 
         /// <summary>
@@ -262,7 +279,7 @@ namespace CallCenterServer
             foreach (KeyValuePair<User, Socket> client in adminsOnline)
             {
                 if (client.Key.IsAdmin && u != client.Key)
-                    Send(client.Value, new ClienLogout(u));
+                    Send(client.Value, new ServerResponse(ResponseContext.ClientsManager, new ClienLogout(u)));
             }
         }
 
@@ -274,31 +291,26 @@ namespace CallCenterServer
         {
             if (adminsOnline.IsEmpty) //No admin to send data
                 return;
-            User[] users = new User[agentsOnline.Count];
-            int counter = 0;
-            foreach (var item in agentsOnline)
-                users[counter++] = item.Key;
-
-            Send(agentsOnline[u], users);
+            Send(agentsOnline[u], new ServerResponse(ResponseContext.ClientsManager, agentsOnline.Keys.ToList().ToArray()));
         }
 
         /// <summary>
         /// Send a object to all users connected
         /// </summary>
         /// <param name="message">object to send</param>
-        public void BroadCastMessageAllClients(Message message)
+        public void BroadCastMessageAllClients(ServerResponse response)
         {
             foreach (KeyValuePair<User, Socket> client in agentsOnline)
-                Send(client.Value, message);
+                Send(client.Value, response);
         }
 
         /// <summary>
         /// Send a message to the destinatary
         /// </summary>
         /// <param name="m">Message to send</param>
-        private void SendMessageToClient(Message m)
+        private void SendMessageToClient(AdminOrder m)
         {
-                Send(agentsOnline[m.userToMessage], m);
+            Send(agentsOnline[m.UserToDoAction], m);
         }
 
         /// <summary>
@@ -326,12 +338,12 @@ namespace CallCenterServer
         /// <summary>
         /// Get client Logout signal and dispose the resources
         /// </summary>
-        /// <param name="logout"></param>
-        public void Logout(Logout logout)
+        /// <param name="aOrder">AdminOrder</param>
+        public void Logout(AdminOrder aOrder)
         {
-            Send(agentsOnline[logout.userToLogout], logout);
-            agentsOnline.TryRemove(logout.userToLogout, out _);
-            SendLogoutToAdmin(logout.userToLogout);
+            Send(agentsOnline[aOrder.UserToDoAction], new ServerResponse(ResponseContext.Disconnect));
+            agentsOnline.TryRemove(aOrder.UserToDoAction, out _);
+            SendLogoutToAdmin(aOrder.UserToDoAction);
         }
 
         /// <summary>
