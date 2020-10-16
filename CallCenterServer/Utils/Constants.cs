@@ -17,7 +17,7 @@ namespace CallCenterServer.Utils
         public const string CONFIG_FILE_DATA = @"{
     ""SERVER_IP"": ""YOUR SERVER IP HERE DEFAULT IS Localhost"",
     ""SERVER_PORT"": ""YOUR SERVER PORT HERE DEFAULT IS 4044"",
-    ""DEBBUG_MODE"": ""SHOW OR HIDE THE SERVER MENU {TRUE : FALSE }"",
+    ""DEBUG_MODE"": ""SHOW OR HIDE THE SERVER MENU {TRUE : FALSE }"",
     ""PATH_LOG_FOLDER"": ""PATH TO YOUR LOGS FILES DIRECTORY ( DEFAULT IS SERVER FOLDER/Serverlogs)""
 }";
     }
