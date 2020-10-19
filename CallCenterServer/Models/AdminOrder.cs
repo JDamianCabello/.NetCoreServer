@@ -3,7 +3,9 @@
 
 namespace SharedNameSpace
 {
-    public enum OrderType { ChangeClientCall, DisconnectUser, GetUserList, ManageDatabase, SendMessage }
+    [field: NonSerialized()]
+    public enum OrderType { GetUserList, SendMessage, DisconnectUser, ManageDatabase }
+    [field: NonSerialized()]
     public enum DatabaseAction { Create, Read, Update, Delete }
 
     [Serializable]
@@ -14,7 +16,7 @@ namespace SharedNameSpace
 
         public DatabaseAction DatabaseAction { get; set; }
         public User UserToDoAction { get; set; }
-        public Call OldCall { get; private set; }
+
         public User UserToSendResponse { get; set; }
 
         public string Message { get; set; }
@@ -29,14 +31,6 @@ namespace SharedNameSpace
             OrderType = OrderType.SendMessage;
             UserToDoAction = userToSendMessage;
             Message = messageToSend;
-
-        }
-
-        public AdminOrder(Call oldCall, User userToReSendCall)
-        {
-            OrderType = OrderType.ChangeClientCall;
-            UserToDoAction = userToReSendCall;
-            OldCall = oldCall;
 
         }
 

@@ -208,9 +208,6 @@ namespace CallCenterServer
                 {
                     switch (aOrder.OrderType)
                     {
-                        case OrderType.ChangeClientCall:
-                            ChangeUserCall(aOrder);
-                            break;
                         case OrderType.GetUserList:
                             SendUserList(aOrder.UserToDoAction);
                             break;
@@ -256,14 +253,6 @@ namespace CallCenterServer
             //Close the resources and end the current thread.
             socket.Close();
         }
-
-        private void ChangeUserCall(AdminOrder aOrder)
-        {
-            SendEndCall(new EndCall(aOrder.OldCall.to));
-            aOrder.OldCall.to = aOrder.UserToDoAction;
-            SendCall(aOrder.OldCall);
-        }
-
 
 
         /// <summary>
@@ -335,6 +324,8 @@ namespace CallCenterServer
             }
             else
                 Send(agentsOnline[call.to], call);
+
+            agentsOnline.Keys.ToList().First(x => x == call.to).InCall = true ;
             call.to.InCall = true;
             SendUserUpdateToAdmin(call.to);
         }
@@ -346,6 +337,7 @@ namespace CallCenterServer
         public void SendEndCall(EndCall endCall)
         {
             Send(agentsOnline[endCall.to], endCall);
+            agentsOnline.Keys.ToList().First(x => x == endCall.to).InCall = false;
             endCall.to.InCall = false;
             SendUserUpdateToAdmin(endCall.to);
         }
