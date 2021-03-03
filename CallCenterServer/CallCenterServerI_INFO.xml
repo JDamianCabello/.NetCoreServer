@@ -23,6 +23,12 @@
             </summary>
             <param name="migrationBuilder">A builder providing a fluentish API for building MigrationOperations</param>
         </member>
+        <member name="M:CallCenterServer.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <summary>
+            Method to make database migration if not exist
+            </summary>
+            <param name="modelBuilder">A builder providing a fluentish API for building MigrationOperations</param>
+        </member>
         <member name="T:CallCenterServer.SQLiteDBContext">
             <summary>
             Represents a combination of the Unit Of Work and Repository patterns such that it can be used to query from a database and group together changes that will then be written back to the store as a unit.
@@ -32,6 +38,12 @@
             <summary>
             Represents an entity set that can be used for create, read, update, and delete operations. 
             </summary>
+        </member>
+        <member name="M:CallCenterServer.SQLiteDBContext.OnConfiguring(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder)">
+            <summary>
+            Create the Database config, here is the database name
+            </summary>
+            <param name="options"></param>
         </member>
         <member name="T:CallCenterServer.SqLiteOperator">
             <summary>
@@ -76,11 +88,12 @@
             </summary>
             <param name="error">Error id</param>
         </member>
-        <member name="M:CallCenterServer.Server.StartServer(CallCenterServer.Server.ErrorDelegate)">
+        <member name="M:CallCenterServer.Server.StartServer(CallCenterServer.Server.ErrorDelegate,CallCenterServer.Server.ShowConsoleLog)">
             <summary>
             Server start point
             </summary>
             <param name="errorDelegate">Method that will handle the errors in other side (Program.cs)</param>
+            <param name="showConsoleLog">Method that will show the console log in other side (Program.cs)</param>
         </member>
         <member name="M:CallCenterServer.Server.StopServer">
             <summary>
@@ -104,6 +117,14 @@
             </summary>
             <param name="o">Socket client</param>
         </member>
+        <member name="M:CallCenterServer.Server.GetCurrentUserBySocket(System.Net.Sockets.Socket,System.Boolean)">
+            <summary>
+            Method to get the current User based on the socket
+            </summary>
+            <param name="userSocket">Client socket</param>
+            <param name="isAdmin">To evaluate what list should use</param>
+            <returns></returns>
+        </member>
         <member name="M:CallCenterServer.Server.SendUserUpdateToAdmin(SharedNameSpace.User)">
             <summary>
             Send a new connection update to all admins clients
@@ -126,7 +147,7 @@
             <summary>
             Send a object to all users connected
             </summary>
-            <param name="message">object to send</param>
+            <param name="response">Response fron the server that contains the message</param>
         </member>
         <member name="M:CallCenterServer.Server.SendMessageToClient(SharedNameSpace.AdminOrder)">
             <summary>
@@ -142,9 +163,9 @@
         </member>
         <member name="M:CallCenterServer.Server.SendEndCall(SharedNameSpace.EndCall)">
             <summary>
-            Send the endcall to a client
+            Send the endcall to client
             </summary>
-            <param name="endCall">Te endcall with the user to send it</param>
+            <param name="endCall">The endcall with the user to send it</param>
         </member>
         <member name="M:CallCenterServer.Server.Logout(SharedNameSpace.AdminOrder)">
             <summary>
@@ -171,6 +192,14 @@
             Write all uses connections to Connection log file
             </summary>
             <param name="u">Current logged user</param>
+            <param name="userIp">User IP</param>
+            <param name="action">User action</param>
+        </member>
+        <member name="M:CallCenterServer.ServerLog.WriteToConsole(System.String)">
+            <summary>
+            Write all console output to log
+            </summary>
+            <param name="message">Log message</param> to save
         </member>
         <member name="M:CallCenterServer.ServerLog.WriteToExceptions(System.Exception)">
             <summary>
@@ -181,6 +210,11 @@
         <member name="M:CallCenterServer.ServerLog.CheckIfExistConnectionsLogsFolder">
             <summary>
             Makes the conection log folder. IF log folder dont exist will create it too.
+            </summary>
+        </member>
+        <member name="M:CallCenterServer.ServerLog.CheckIfExistConsoleLogsFolder">
+            <summary>
+            Makes the console log folder. IF log folder dont exist will create it too.
             </summary>
         </member>
         <member name="M:CallCenterServer.ServerLog.CheckIfExistLogFolder">
@@ -225,6 +259,8 @@
             
             </summary>
             <param name="user">User into for make a string to log file</param>
+            <param name="userIp">User IP</param>
+            <param name="action">User Action</param>
             <returns>Formated string with user info</returns>
         </member>
         <member name="T:CallCenterServer.Utils.Constants">
@@ -238,6 +274,26 @@
             
             if dont exist server will ask to make it and will take from the template
             </summary>
+        </member>
+        <member name="T:SharedNameSpace.OrderType">
+            <summary>
+            Type of order
+            </summary>
+        </member>
+        <member name="T:SharedNameSpace.DatabaseAction">
+            <summary>
+            CRUD Database actions
+            </summary>
+        </member>
+        <member name="M:SharedNameSpace.Call.#ctor(SharedNameSpace.User,System.String,System.String,System.String,System.Int32)">
+            <summary>
+            Crea un objeto Call
+            </summary>
+            <param name="to">Usuario al que va dirijida la llamada</param>
+            <param name="number">Número de telefono de la llamada</param>
+            <param name="campaigne">Campania de la llamada</param>
+            <param name="callid">Id de la llamada [Este campo se puso porque era necesario para vocalcom]</param>
+            <param name="indice">Indice de la llamada [Este campo se puso porque era necesario para vocalcom]</param>
         </member>
         <member name="T:SharedNameSpace.EndCall">
             <summary>

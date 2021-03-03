@@ -14,6 +14,7 @@ namespace CallCenterServer
         private ServerLog() {
             syncWriteExceptionLock = new object();
             syncWriteConnectionLock = new object();
+            syncWriteConsoleLock = new object();
         }
 
         public static ServerLog GetInstance()
@@ -27,6 +28,7 @@ namespace CallCenterServer
         //Object to stop all thread try write in the logs files. If object is locked thread will wait to write
         private readonly object syncWriteExceptionLock;
         private readonly object syncWriteConnectionLock;
+        private readonly object syncWriteConsoleLock;
 
         //Config file reader
         static readonly IConfiguration config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json").Build();
@@ -35,17 +37,33 @@ namespace CallCenterServer
         //Based path to put logs files
         private static readonly string PATH_CONNECTIONLOG_FOLDER = PATH_LOG_FOLDER + Path.DirectorySeparatorChar + "ConnectionLogs";
         private static readonly string PATH_EXCEPTIONLOG_FOLDER = PATH_LOG_FOLDER + Path.DirectorySeparatorChar + "ExceptionsLogs";
+        private static readonly string PATH_CONSOLELOGS_FOLDER = PATH_LOG_FOLDER + Path.DirectorySeparatorChar + "RunningLogs";
 
         /// <summary>
         /// Write all uses connections to Connection log file
         /// </summary>
         /// <param name="u">Current logged user</param>
+        /// <param name="userIp">User IP</param>
+        /// <param name="action">User action</param>
         public void WriteToConnections(User u, string userIp, ConnectionAction action)
         {
             CheckIfExistConnectionsLogsFolder();
             lock (syncWriteConnectionLock)
             {
                 File.AppendAllText(PATH_CONNECTIONLOG_FOLDER + Path.DirectorySeparatorChar + "ConnectionsLog_" + DateTime.Now.ToString("yyyyMMdd") + ".log", FormatConnection(u, userIp, action));
+            }
+        }
+
+        /// <summary>
+        /// Write all console output to log
+        /// </summary>
+        /// <param name="message">Log message</param> to save
+        public void WriteToConsole(string message)
+        {
+            CheckIfExistConsoleLogsFolder();
+            lock (syncWriteConsoleLock)
+            {
+                File.AppendAllText(PATH_CONSOLELOGS_FOLDER + Path.DirectorySeparatorChar + "ConsoleLog_" + DateTime.Now.ToString("yyyyMMdd") + ".log", message+"\n");
             }
         }
 
@@ -68,6 +86,16 @@ namespace CallCenterServer
             CheckIfExistLogFolder();
             if (!Directory.Exists(PATH_CONNECTIONLOG_FOLDER))
                 Directory.CreateDirectory(PATH_CONNECTIONLOG_FOLDER);
+        }
+
+        /// <summary>
+        /// Makes the console log folder. IF log folder dont exist will create it too.
+        /// </summary>
+        private void CheckIfExistConsoleLogsFolder()
+        {
+            CheckIfExistLogFolder();
+            if (!Directory.Exists(PATH_CONSOLELOGS_FOLDER))
+                Directory.CreateDirectory(PATH_CONSOLELOGS_FOLDER);
         }
 
         /// <summary>
@@ -150,6 +178,8 @@ namespace CallCenterServer
         /// 
         /// </summary>
         /// <param name="user">User into for make a string to log file</param>
+        /// <param name="userIp">User IP</param>
+        /// <param name="action">User Action</param>
         /// <returns>Formated string with user info</returns>
         private string FormatConnection(User user, string userIp, ConnectionAction action)
         {
