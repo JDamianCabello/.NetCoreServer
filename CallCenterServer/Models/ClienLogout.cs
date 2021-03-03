@@ -4,6 +4,7 @@
 namespace SharedNameSpace
 {
     [Serializable]
+
     public class ClienLogout
     {
         public User clientToLogout;

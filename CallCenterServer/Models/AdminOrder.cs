@@ -3,8 +3,15 @@
 
 namespace SharedNameSpace
 {
+    /// <summary>
+    /// Type of order
+    /// </summary>
     [field: NonSerialized()]
     public enum OrderType { GetUserList, SendMessage, DisconnectUser, ManageDatabase }
+
+    /// <summary>
+    /// CRUD Database actions
+    /// </summary>
     [field: NonSerialized()]
     public enum DatabaseAction { Create, Read, Update, Delete }
 

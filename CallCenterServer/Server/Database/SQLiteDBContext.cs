@@ -12,6 +12,11 @@ namespace CallCenterServer
         /// Represents an entity set that can be used for create, read, update, and delete operations. 
         /// </summary>
         public DbSet<User> Users { get; set; }
+
+        /// <summary>
+        /// Create the Database config, here is the database name
+        /// </summary>
+        /// <param name="options"></param>
         protected override void OnConfiguring(DbContextOptionsBuilder options)
             => options.UseSqlite("Data Source=CallCenterUsers.db"); //Database name here
     }
